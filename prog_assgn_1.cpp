@@ -6,6 +6,7 @@
 #include <ctime>
 #include <iomanip>
 #include <string>
+#include <stdio.h>
 
 using namespace std;
 
@@ -195,6 +196,42 @@ int Book :: Book_request(string id_of_user){
         fout.close();
         remove("UserDatabase.csv");
         rename("UserTemp.csv","UserDatabase.csv");
+        flag = 0;
+        if(avail==0){
+        fin.open("BooksDatabase.csv");
+        fout.open("BooksTemp.csv");
+            
+            getline(fin,line); //titles of attributes
+            while(!fin.eof()){
+                //int issued = 0;
+                row.clear();
+        
+                getline(fin,line);
+                stringstream s(line);
+                while(getline(s,word,", ")){
+                     row.push_back(word);
+                }
+                if(!ISBN.compare(row[0])){
+                       // int rsize = row.size();
+                        for(int j=0;j< 4;j++){
+                             fout<< row[j]<<", ";
+                        }
+                        fout<<avail<<", "<<Id<<", "<<due_day[0]<<"-"<<due_day[1]<<"-"<<due_day[2]<<"\n";
+                }
+                else {
+                    int rsize = row.size();
+                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+                    fout<<row[rsize-1]<<"\n";
+                }
+        }
+         if(flag==0){
+                 cout<< "\nUser NOT found\n";
+            }
+        fin.close();
+        fout.close();
+        remove("BooksDatabase.csv");
+        rename("BooksTemp.csv","BooksDatabase.csv");
+        }
         }
     return avail;
 }
@@ -244,7 +281,7 @@ int Book ::Book_return(string id_of_user){
         fout.close();
         remove("UserDatabase.csv");
         rename("UserTemp.csv","UserDatabase.csv");
-
+        flag = 0;
         fin.open("BooksDatabase.csv");
         fout.open("BooksTemp.csv");
             
@@ -281,9 +318,16 @@ int Book ::Book_return(string id_of_user){
         return avail;
 }
 
-void Book :: set_duedate(){
+void Book :: set_duedate(int role){
     time_t now = time(0);
-    tm *d = 
+    tm *d = localtime(&now);
+    int dd= d->tm_mday,
+    mm = d->tm_mon,
+    yy = d->tm_year;
+    int dom[12]= {31,28,31,30,31,30,31,31,30,31,30,31};
+    // if(role == 2){
+
+    // }
 }
 
 void UserDatabase :: Add(){
@@ -295,7 +339,7 @@ void UserDatabase :: Add(){
     do{
     cout <<"\nENTER DETAILS OF USER TO BE ADDED: ";
     cout << "\nEnter User Name : ";
-    getline(cin,name);
+    gets(name);
     cout << "\nEnter user id : ";
     cin >> id;
     while(password.compare(cpassword)){
@@ -324,11 +368,11 @@ void BooksDatabase :: Add(){
     do{
     cout <<"\nENTER DETAILS OF BOOK TO BE ADDED: ";
     cout << "\nEnter Title of the book : ";
-    getline(cin,title);
+    gets(title);
     cout << "\nEnter the author name : ";
-    getline(cin,author);
+    gets(author);
     cout << "\nEnter the publication : ";
-    getline(cin,publication);
+    gets(publication);
     cout <<"\nEnter the ISBN number : ";
     cin >> isbn;
 
@@ -460,7 +504,7 @@ void UserDatabase :: Update(){
                 while(getline(s,word,", ")){
                      row.push_back(word);
                 }
-                if(!id_of_user.compare(row[0])){
+                if(!id.compare(row[0])){
                         cout<< "\nFOUND. Here are the DETAILS:  ";
                         cout << "\nID : "<<row[0];
                         cout << "\nName : "<<row[1];
@@ -505,7 +549,7 @@ void UserDatabase :: Update(){
         fout.close();
         remove("UserDatabase.csv");
         rename("UserTemp.csv","UserDatabase.csv");
-        }
+        
 }
 void BooksDatabase :: Update(){
     int col;
@@ -521,12 +565,11 @@ void BooksDatabase :: Update(){
             vector<string> row;
             int flag =0;
     
-            fin.open("UserDatabase.csv");
-            fout.open("UserTemp.csv");
+            fin.open("BooksDatabase.csv");
+            fout.open("BooksTemp.csv");
             
             getline(fin,line); //titles of attributes
             while(!fin.eof()){
-                int issued = 0;
                 row.clear();
         
                 getline(fin,line);
@@ -534,45 +577,53 @@ void BooksDatabase :: Update(){
                 while(getline(s,word,", ")){
                      row.push_back(word);
                 }
-                if(!id_of_user.compare(row[0])){
+                if(!isbn.compare(row[0])){
                     flag =1;
-                    role = stoi(row[3]);
-                    if(role==2) {
-                        Professor P;
-                        P.setProf(row[1],row[0],stof(row[4]),stoi(row[5]));
-                        avail = 0; issued = 1;
-                    }
-                    else if(role==3){
-                        Student S;
-                        S.setStud(row[1],row[0],stof(row[4]),stoi(row[5]));
-                        if(S.book_count < 5){
-                            avail = 0; issued = 1;
+
+                    cout<< "\nFOUND. Here are the DETAILS:  ";
+                    cout << "\nISBN : "<<row[0];
+                    cout << "\nTitle : "<<row[1];
+                    cout << "\nAuthor : "<<row[2];
+                    cout << "\nPublication : "<<row[3];
+                    cout<< "\nAvailability : "<<(stoi(row[4])==0)?"yes":"no";
+                    cout<< "\nIssued by id : "<<row[5];
+                    cout<< "\nDue date : "<<row[6];
+                     switch(col){
+                         string det;
+                            case 1: cout <<"\nEnter new title: ";
+                                    gets(det); row[1] = det;
+                                    break;
+                            case 2: cout <<"\nEnter new author name: ";
+                                    gets(det); row[2] = det;
+                                    break;
+                            case 3: cout <<"\nEnter new publication: ";
+                                    gets(det); row[3] = det;
+                                    break;
+                            case 4: cout <<"\nEnter the availability: (0: unavailable   1: available)";
+                                    gets(det); row[4] = det;
+                                    break;
+                            case 5: cout <<"\nEnter new user: ";
+                                    gets(det); row[5] = det;
+                                    break;
+                            case 6: cout <<"\nEnter changed issue date: dd-mm-yyyy ";
+                                    gets(det); row[6] = det;
+                                    break;
+                            default: cout <<"\nEnter valid choice!!";
                         }
-                    }
-                    if(issued){
-                        Id = id_of_user;
-                        set_duedate(role);
-                        int rsize = row.size();
-                        for(int j=0;j<rsize-1;j++){
-                             fout<< row[j]<<", ";
-                        }
-                        fout<<to_string(stoi(row[rsize-1]) + 1)<<"\n";
-                    }
-                }
-                else if(issued==0){
+                }   
                     int rsize = row.size();
                     for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
                     fout<<row[rsize-1]<<"\n";
-                }
+                
         }
          if(flag==0){
-                 cout<< "\nUser NOT found\n";
+                 cout<< "\nBook NOT found\n";
             }
         fin.close();
         fout.close();
-        remove("UserDatabase.csv");
-        rename("UserTemp.csv","UserDatabase.csv");
-        }
+        remove("BooksDatabase.csv");
+        rename("BooksTemp.csv","BooksDatabase.csv");
+        
 }
 
 void UserDatabase :: Delete(){
