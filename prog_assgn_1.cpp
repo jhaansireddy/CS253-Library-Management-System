@@ -42,7 +42,7 @@ class Book{
     }
     int Book_request(string id_of_user); 
     int Book_return(string id_of_user);
-    int* Show_duedate(){
+    vector<int> Show_duedate(){
         cout << "Due date to return the book \""<<Title<<"\" is "<<due_day[0]<<"-"<<due_day[1]<<"-"<<due_day[2];
         return due_day;
     }
@@ -74,7 +74,7 @@ class Professor :  public User{
   //  vector<Book> book_list;
     void Calculate_fine();
     public:
-    void setProf(string n, string i, float f, int bc, vector<Book> list){
+    void setProf(string n, string i, float f, int bc){
         setUser(n,i);
         role = 2;
         FineAmnt=f;
@@ -83,6 +83,10 @@ class Professor :  public User{
     }
     void Clear_fine_amount(){
         FineAmnt = 0;
+    }
+    void showFine(){
+        Calculate_fine();
+        cout <<"\nYour fine amount is: "<<FineAmnt;
     }
 };
 
@@ -117,7 +121,7 @@ class Student :  private User{
    // vector<Book> book_list;
     void Calculate_fine();
     public:
-    void setStud(string n, string i, float f, int bc, vector<Book> list){
+    void setStud(string n, string i, float f, int bc){
         setUser(n,i);
         role =3;
         FineAmnt=f;
@@ -127,13 +131,15 @@ class Student :  private User{
     void Clear_fine_amount(){
         FineAmnt = 0;
     }
+    void showFine(){
+        Calculate_fine();
+        cout <<"\nYour fine amount is: "<<FineAmnt;
+    }
 };
 
 //class functions definition
 int Book :: Book_request(string id_of_user){
-    int role, books;
-    UserDatabase U;
-    BooksDatabase B;
+    int role;
         if(avail == 0){
         cout << "Book not available.";
         }
@@ -155,7 +161,7 @@ int Book :: Book_request(string id_of_user){
         
                 getline(fin,line);
                 stringstream s(line);
-                while(getline(s,word,", ")){
+                while(getline(s,word,',')){
                      row.push_back(word);
                 }
                 if(!id_of_user.compare(row[0])){
@@ -208,11 +214,12 @@ int Book :: Book_request(string id_of_user){
         
                 getline(fin,line);
                 stringstream s(line);
-                while(getline(s,word,", ")){
+                while(getline(s,word,',')){
                      row.push_back(word);
                 }
                 if(!ISBN.compare(row[0])){
                        // int rsize = row.size();
+                       flag =1;
                         for(int j=0;j< 4;j++){
                              fout<< row[j]<<", ";
                         }
@@ -225,7 +232,7 @@ int Book :: Book_request(string id_of_user){
                 }
         }
          if(flag==0){
-                 cout<< "\nUser NOT found\n";
+                 cout<< "\nBook NOT found\n";
             }
         fin.close();
         fout.close();
@@ -236,6 +243,10 @@ int Book :: Book_request(string id_of_user){
     return avail;
 }
 int Book ::Book_return(string id_of_user){
+    if(Id.compare(id_of_user)){
+                            cout << "\nYou CANNOT return this book\n";
+                            return avail;
+                        }
             int role;
             ifstream fin;
             ofstream fout;
@@ -253,14 +264,11 @@ int Book ::Book_return(string id_of_user){
         
                 getline(fin,line);
                 stringstream s(line);
-                while(getline(s,word,", ")){
+                while(getline(s,word,',')){
                      row.push_back(word);
                 }
                 if(!id_of_user.compare(row[0])){
-                        if(Id.compare(id_of_user)){
-                            cout << "\nYou CANNOT return this book\n";
-                            return avail;
-                        }
+                        flag=1;
                         avail = 1;
                         int rsize = row.size();
                         for(int j=0;j<rsize-1;j++){
@@ -292,10 +300,11 @@ int Book ::Book_return(string id_of_user){
         
                 getline(fin,line);
                 stringstream s(line);
-                while(getline(s,word,", ")){
+                while(getline(s,word,',')){
                      row.push_back(word);
                 }
-                if(!ISBN.compare(row[0])){
+                if(!ISBN.compare(row[0])){ 
+                      flag=1;
                        // int rsize = row.size();
                         for(int j=0;j< 4;j++){
                              fout<< row[j]<<", ";
@@ -309,7 +318,7 @@ int Book ::Book_return(string id_of_user){
                 }
         }
          if(flag==0){
-                 cout<< "\nUser NOT found\n";
+                 cout<< "\nBook NOT found\n";
             }
         fin.close();
         fout.close();
@@ -324,10 +333,212 @@ void Book :: set_duedate(int role){
     int dd= d->tm_mday,
     mm = d->tm_mon,
     yy = d->tm_year;
+    int allowed_days = (role == 2)? 60: 30;
+    int flag=0;
     int dom[12]= {31,28,31,30,31,30,31,31,30,31,30,31};
-    // if(role == 2){
+    if(yy%4 == 0) dom[1] = 29; //leap year
+    dd += allowed_days;
+    while(dd > dom[mm-1]){
+        dd -= dom[(mm++)-1];
+        if(mm==12) {mm=1; yy+=1;}
+    }
+    due_day.push_back(dd);
+    due_day.push_back(mm);
+    due_day.push_back(yy);
+}
 
-    // }
+void Professor :: Calculate_fine(){
+    ifstream fin;
+    string line, word;
+    vector<string> row;
+    int overdue =0;
+    int dom[12]= {31,28,31,30,31,30,31,31,30,31,30,31};
+
+    time_t now = time(0);
+    tm *N = localtime(&now);
+    int dd= N->tm_mday,
+    mm = N->tm_mon,
+    yy = N->tm_year;
+    if(yy%4 == 0) dom[1] = 29; //leap year
+
+    Clear_fine_amount();
+    fin.open("BooksDatabase.csv");
+       
+    getline(fin,line); //titles of attributes
+    while(!fin.eof()){
+        row.clear();
+        
+        getline(fin,line);
+        stringstream s(line);
+        while(getline(s,word,',' )){
+            row.push_back(word);
+        }
+        if(Id.compare(row[5])==0){
+            string dig;
+            int d[3],j=0,ndays=0;
+            overdue=0;
+            stringstream s1(row[6]);
+            
+            while(getline(s1,dig,'-')){
+                d[j++]= stoi(dig);
+            }
+
+            if(d[2] < yy) overdue = 1;
+            else if(d[2] == yy){
+                if(d[1] < mm) overdue=1;
+                else if(d[1] == mm) {if(d[0] < dd) overdue=1;}
+            }
+            if(overdue){
+                if(d[2]==yy && d[1]==mm) ndays = dd- d[0];
+                else{
+                    ndays= dom[d[1]] - d[0] + dd;
+                    if(yy == d[2])
+                    for(int k= d[1]+1; k<mm; k++) ndays += dom[k];
+                    else {
+                        for(int k= d[1]+1; k<= 12; k++) ndays += dom[k];
+                        for(int k= 1; k<mm; k++) ndays += dom[k];
+                    }
+                } 
+                FineAmnt += (ndays*5);
+            }
+        }
+    }
+    fin.close();
+
+            
+            ofstream fout;
+            
+            int flag =0;
+    
+            fin.open("UserDatabase.csv");
+            fout.open("UserTemp.csv");
+            
+            getline(fin,line); //titles of attributes
+            while(!fin.eof()){
+                //int issued = 0;
+                row.clear();
+        
+                getline(fin,line);
+                stringstream s(line);
+                while(getline(s,word,',')){
+                     row.push_back(word);
+                }
+                if(!Id.compare(row[0])){
+                        flag=1;
+                        int rsize = row.size();
+                        for(int j=0;j<4;j++){
+                             fout<< row[j]<<", ";
+                        }
+                        fout<<FineAmnt<<", "<<row[rsize-1]<<"\n";
+                }
+                else {
+                    int rsize = row.size();
+                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+                    fout<<row[rsize-1]<<"\n";
+                }
+        }
+         if(flag==0){
+                 cout<< "\nUser NOT found\n";
+            }
+        fin.close();
+        fout.close();
+        remove("UserDatabase.csv");
+        rename("UserTemp.csv","UserDatabase.csv");
+}
+void Student :: Calculate_fine(){
+    ifstream fin;
+    string line, word;
+    vector<string> row;
+    int overdue =0;
+    int dom[12]= {31,28,31,30,31,30,31,31,30,31,30,31};
+    time_t now = time(0);
+    tm *N = localtime(&now);
+    int dd= N->tm_mday,
+    mm = N->tm_mon,
+    yy = N->tm_year;
+    Clear_fine_amount();
+    fin.open("BooksDatabase.csv");
+       
+    getline(fin,line); //titles of attributes
+    while(!fin.eof()){
+        row.clear();
+        
+        getline(fin,line);
+        stringstream s(line);
+        while(getline(s,word,',' )){
+            row.push_back(word);
+        }
+        if(Id.compare(row[5])==0){
+            string dig;
+            int d[3],j=0,ndays=0;
+            overdue=0;
+            stringstream s1(row[6]);
+            
+            while(getline(s1,dig,'-')){
+                d[j++]= stoi(dig);
+            }
+
+            if(d[2] < yy) overdue = 1;
+            else if(d[2] == yy){
+                if(d[1] < mm) overdue=1;
+                else if(d[1] == mm) {if(d[0] < dd) overdue=1;}
+            }
+            if(overdue){
+                if(d[2]==yy && d[1]==mm) ndays = dd- d[0];
+                else{
+                    ndays= dom[d[1]] - d[0] + dd;
+                    if(yy == d[2])
+                    for(int k= d[1]+1; k<mm; k++) ndays += dom[k];
+                    else {
+                        for(int k= d[1]+1; k<= 12; k++) ndays += dom[k];
+                        for(int k= 1; k<mm; k++) ndays += dom[k];
+                    }
+                } 
+                FineAmnt += (ndays*2);
+            }
+        }
+
+    }
+    fin.close();
+
+    ofstream fout;
+            
+            int flag =0;
+    
+            fin.open("UserDatabase.csv");
+            fout.open("UserTemp.csv");
+            
+            getline(fin,line); //titles of attributes
+            while(!fin.eof()){
+                //int issued = 0;
+                row.clear();
+        
+                getline(fin,line);
+                stringstream s(line);
+                while(getline(s,word,',')){
+                     row.push_back(word);
+                }
+                if(!Id.compare(row[0])){
+                        flag=1;
+                        int rsize = row.size();
+                        for(int j=0;j<4;j++){
+                             fout<< row[j]<<", ";
+                        }
+                        fout<<FineAmnt<<", "<<row[rsize-1]<<"\n";
+                }
+                else {
+                    int rsize = row.size();
+                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+                    fout<<row[rsize-1]<<"\n";
+                }
+        }
+         if(flag==0){
+                 cout<< "\nUser NOT found\n";
+            }
+        fin.close();
+        fout.close();
+        remove("UserDatabase.csv");
+        rename("UserTemp.csv","UserDatabase.csv");
 }
 
 void UserDatabase :: Add(){
@@ -399,7 +610,7 @@ void UserDatabase :: Search(){
         
         getline(fin,line);
         stringstream s(line);
-        while(getline(s,word,", ")){
+        while(getline(s,word,',')){
             row.push_back(word);
         }
         if(!id.compare(row[0])){
@@ -445,7 +656,7 @@ void BooksDatabase :: Search(int indicator){
         
         getline(fin,line);
         stringstream s(line);
-        while(getline(s,word,", ")){
+        while(getline(s,word,',')){
             row.push_back(word);
         }
         if(indicator==1 && id.compare(row[5])==0){
@@ -501,10 +712,11 @@ void UserDatabase :: Update(){
         
                 getline(fin,line);
                 stringstream s(line);
-                while(getline(s,word,", ")){
+                while(getline(s,word,',')){
                      row.push_back(word);
                 }
                 if(!id.compare(row[0])){
+                    flag=1;
                         cout<< "\nFOUND. Here are the DETAILS:  ";
                         cout << "\nID : "<<row[0];
                         cout << "\nName : "<<row[1];
@@ -574,7 +786,7 @@ void BooksDatabase :: Update(){
         
                 getline(fin,line);
                 stringstream s(line);
-                while(getline(s,word,", ")){
+                while(getline(s,word,',')){
                      row.push_back(word);
                 }
                 if(!isbn.compare(row[0])){
@@ -643,7 +855,7 @@ void UserDatabase :: Delete(){
         c ='n';
         getline(fin,line);
         stringstream s(line);
-        while(getline(s,word,", ")){
+        while(getline(s,word,',')){
             row.push_back(word);
         }
         if(!id.compare(row[0])){
@@ -696,7 +908,7 @@ void BooksDatabase :: Delete(){
         c ='n';
         getline(fin,line);
         stringstream s(line);
-        while(getline(s,word,", ")){
+        while(getline(s,word,',')){
             row.push_back(word);
         }
         if(!id.compare(row[0])){
@@ -747,7 +959,7 @@ void BooksDatabase :: Display(){
         
         getline(fin,line);
         stringstream s(line);
-        while(getline(s,word,", ")){
+        while(getline(s,word,',')){
             row.push_back(word);
         }
         cout << left <<setw(17)<<row[0]
@@ -775,7 +987,7 @@ Book GiveObject(string isbn){
         
         getline(fin,line);
         stringstream s(line);
-        while(getline(s,word,", ")){
+        while(getline(s,word,',')){
             row.push_back(word);
         }
         
@@ -785,7 +997,7 @@ Book GiveObject(string isbn){
             int d[3],j=0;
             string dig;
             stringstream s1(row[6]);
-            while(getline(s1,dig,"-")){
+            while(getline(s1,dig,'-')){
                 d[j++]= stoi(dig);
             }
             B.setBook(row[1],row[2],row[3],row[0],row[5],stoi(row[4]),d);
@@ -820,7 +1032,7 @@ int main(){
             getline(fin, line);
             stringstream s(line);
     
-            while (getline(s, word, ', ')) {
+            while (getline(s, word, ',')) {
                 row.push_back(word);
             }
             if(input_id.compare(row[0])==0){
@@ -865,6 +1077,7 @@ int main(){
     }
     else if(userRole==2){
         Professor P;
+        string isbn;
         P.setProf(row[1],row[0],stof(row[4]),stoi(row[5]));
         int choice=0;
         do{
@@ -878,9 +1091,21 @@ int main(){
             cin >> choice;
             switch (choice)
             {
-            case 1:
+            case 1: B.Display();
                     break;
-            
+            case 2: cout << "\nEnter isbn of the book you want to request: ";
+                    cin >> isbn;
+                    Book b = GiveObject(isbn);
+                    b.Book_request(P.Id);
+                    break;
+            case 3: B.Search(2); break;
+            case 4: cout << "\nEnter isbn of the book you want to return: ";
+                    cin >> isbn;
+                    Book b = GiveObject(isbn);
+                    b.Book_return(P.Id);
+                    break;
+            case 5: P.showFine();
+                    break;
             default: cout <<"\nEnter Valid choice\n";
                 break;
             }
@@ -915,7 +1140,7 @@ int main(){
                     Book b = GiveObject(isbn);
                     b.Book_return(S.Id);
                     break;
-            case 5: 
+            case 5: S.showFine();
                     break;
             default: cout <<"\nEnter Valid choice\n";
                 break;
