@@ -6,7 +6,8 @@
 #include <ctime>
 #include <iomanip>
 #include <string>
-#include <stdio.h>
+//#include <stdio.h>
+#include <cstdio>
 
 using namespace std;
 
@@ -179,23 +180,25 @@ int Book :: Book_request(string id_of_user){
                         if(stoi(row[5]) < 5){
                             avail = 0; issued = 1;
                         }
+                        else cout<<"\nCAnnot Issue more books";
                     }
                     if(issued){
                         Id = id_of_user;
                         set_duedate(role);
+                        Show_duedate();
                         int rsize = row.size();
                         if(!fin.eof()){
                         for(int j=0;j<rsize-1;j++){
-                             fout<< row[j]<<", ";
+                             fout<< row[j]<<",";
                         }
                         fout<<to_string(stoi(row[rsize-1]) + 1)<<"\n";
                         }
                     }
                 }
-                else if(issued==0){
+                if(issued==0){
                     int rsize = row.size();
                     if(!fin.eof()){
-                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<",";
                     fout<<row[rsize-1]<<"\n";
                     }
                 }
@@ -206,14 +209,14 @@ int Book :: Book_request(string id_of_user){
         fin.close();
         fout.close();
        // cout<<"ERROR IN DELETION";
-        remove("UserDatabase.csv");
-        rename("UserTemp.csv","UserDatabase.csv");
+       if( remove("UserDatabase.csv") != 0) cout<<"\nERROR IN DELETION";
+       if( rename("UserTemp.csv","UserDatabase.csv") != 0) cout<<"\nERROR IN RENAME";
         flag = 0;
         if(avail==0){
         fin.open("BooksDatabase.csv");
         fout.open("BooksTemp.csv");
             
-            getline(fin,line); //titles of attributes
+           // getline(fin,line); //titles of attributes
             while(!fin.eof()){
                 //int issued = 0;
                 row.clear();
@@ -228,15 +231,16 @@ int Book :: Book_request(string id_of_user){
                        flag =1;
                        if(!fin.eof()){
                         for(int j=0;j< 4;j++){
-                             fout<< row[j]<<", ";
+                             fout<< row[j]<<",";
                         }
-                        fout<<avail<<", "<<Id<<", "<<due_day[0]<<"-"<<due_day[1]<<"-"<<due_day[2]<<"\n";
+                        fout<<avail<<","<<Id<<","<<due_day[0]<<"-"<<due_day[1]<<"-"<<due_day[2]<<"\n";
                        }
                 }
                 else {
+                   // cout<<"\nWhen Not\n";
                     int rsize = row.size();
                     if(!fin.eof()){
-                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<",";
                     fout<<row[rsize-1]<<"\n";
                     }
                 }
@@ -244,11 +248,12 @@ int Book :: Book_request(string id_of_user){
          if(flag==0){
                  cout<< "\nBook NOT found\n";
             }
+        
+        }
         fin.close();
         fout.close();
-        remove("BooksDatabase.csv");
-        rename("BooksTemp.csv","BooksDatabase.csv");
-        }
+        if(remove("BooksDatabase.csv")!=0) cout<<"\nError deletion";
+        if(rename("BooksTemp.csv","BooksDatabase.csv")!=0) cout<<"\nError renaming";
         }
     return avail;
 }
@@ -282,13 +287,13 @@ int Book ::Book_return(string id_of_user){
                         avail = 1;
                         int rsize = row.size();
                         for(int j=0;j<rsize-1;j++){
-                             fout<< row[j]<<", ";
+                             fout<< row[j]<<",";
                         }
                         fout<<to_string(stoi(row[rsize-1]) - 1)<<"\n";
                 }
                 else {
                     int rsize = row.size();
-                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<",";
                     fout<<row[rsize-1]<<"\n";
                 }
         }
@@ -317,13 +322,13 @@ int Book ::Book_return(string id_of_user){
                       flag=1;
                        // int rsize = row.size();
                         for(int j=0;j< 4;j++){
-                             fout<< row[j]<<", ";
+                             fout<< row[j]<<",";
                         }
                         fout<<avail<<", NULL, NULL\n";
                 }
                 else {
                     int rsize = row.size();
-                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<",";
                     fout<<row[rsize-1]<<"\n";
                 }
         }
@@ -342,19 +347,22 @@ void Book :: set_duedate(int role){
     tm *d = localtime(&now);
     int dd= d->tm_mday,
     mm = d->tm_mon,
-    yy = d->tm_year;
-    int allowed_days = (role == 2)? 60: 30;
+    yy = d->tm_year + 1900;
+    //cout<<role;
+    int allowed_days = ((role == 2)? 60: 30);
     int flag=0;
     int dom[12]= {31,28,31,30,31,30,31,31,30,31,30,31};
     if(yy%4 == 0) dom[1] = 29; //leap year
     dd += allowed_days;
-    while(dd > dom[mm-1]){
-        dd -= dom[(mm++)-1];
+    while(dd > dom[mm]){
+        dd -= dom[(mm++)];
         if(mm==12) {mm=1; yy+=1;}
     }
-    due_day.push_back(dd);
-    due_day.push_back(mm);
-    due_day.push_back(yy);
+    due_day[0] = dd;;
+    due_day[1] = mm+1;
+    due_day[2] = yy;
+    //cout<<due_day[0]<<"-"<<due_day[1]<<"-"<<due_day[2];
+    //Show_duedate();
 }
 
 void Professor :: Calculate_fine(){
@@ -368,7 +376,7 @@ void Professor :: Calculate_fine(){
     tm *N = localtime(&now);
     int dd= N->tm_mday,
     mm = N->tm_mon,
-    yy = N->tm_year;
+    yy = N->tm_year + 1900;
     if(yy%4 == 0) dom[1] = 29; //leap year
 
     Clear_fine_amount();
@@ -392,7 +400,7 @@ void Professor :: Calculate_fine(){
             while(getline(s1,dig,'-')){
                 d[j++]= stoi(dig);
             }
-
+            d[1] -= 1;
             if(d[2] < yy) overdue = 1;
             else if(d[2] == yy){
                 if(d[1] < mm) overdue=1;
@@ -437,13 +445,13 @@ void Professor :: Calculate_fine(){
                         flag=1;
                         int rsize = row.size();
                         for(int j=0;j<4;j++){
-                             fout<< row[j]<<", ";
+                             fout<< row[j]<<",";
                         }
-                        fout<<FineAmnt<<", "<<row[rsize-1]<<"\n";
+                        fout<<FineAmnt<<","<<row[rsize-1]<<"\n";
                 }
                 else {
                     int rsize = row.size();
-                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<",";
                     fout<<row[rsize-1]<<"\n";
                 }
         }
@@ -465,7 +473,8 @@ void Student :: Calculate_fine(){
     tm *N = localtime(&now);
     int dd= N->tm_mday,
     mm = N->tm_mon,
-    yy = N->tm_year;
+    yy = N->tm_year+ 1900;
+    if(yy%4 == 0) dom[1] = 29; //leap year
     Clear_fine_amount();
     fin.open("BooksDatabase.csv");
        
@@ -487,7 +496,7 @@ void Student :: Calculate_fine(){
             while(getline(s1,dig,'-')){
                 d[j++]= stoi(dig);
             }
-
+            d[1] -= 1;
             if(d[2] < yy) overdue = 1;
             else if(d[2] == yy){
                 if(d[1] < mm) overdue=1;
@@ -532,13 +541,13 @@ void Student :: Calculate_fine(){
                         flag=1;
                         int rsize = row.size();
                         for(int j=0;j<4;j++){
-                             fout<< row[j]<<", ";
+                             fout<< row[j]<<",";
                         }
-                        fout<<FineAmnt<<", "<<row[rsize-1]<<"\n";
+                        fout<<FineAmnt<<","<<row[rsize-1]<<"\n";
                 }
                 else {
                     int rsize = row.size();
-                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<",";
                     fout<<row[rsize-1]<<"\n";
                 }
         }
@@ -573,7 +582,7 @@ void UserDatabase :: Add(){
     cout << "What is the role of the user? Type \n 1: Librarian\n 2: Professor\n 3: Student\n";
     cin >> role;
 
-    fout << id<<", "<<name<<", "<<password<<", "<<role<<", "<<0<<", "<<0<<"\n";
+    fout << id<<","<<name<<","<<password<<","<<role<<","<<0<<","<<0<<"\n";
 
     cout << "\nContinue with adding users? (y/n): ";
     cin >> c;
@@ -597,7 +606,7 @@ void BooksDatabase :: Add(){
     cout <<"\nEnter the ISBN number : ";
     cin >> isbn;
 
-    fout << isbn<<", "<<title<<", "<<author<<", "<<publication<<", "<<0<<", NULL, NULL\n";
+    fout << isbn<<","<<title<<","<<author<<","<<publication<<","<<0<<", NULL, NULL\n";
 
     cout << "\nContinue with adding books? (y/n): ";
     cin >> c;
@@ -762,7 +771,7 @@ void UserDatabase :: Update(){
                     
                 }
                     int rsize = row.size();
-                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<",";
                     fout<<row[rsize-1]<<"\n";
                 
         }
@@ -837,7 +846,7 @@ void BooksDatabase :: Update(){
                         }
                 }   
                     int rsize = row.size();
-                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+                    for(int j=0;j<rsize-1;j++) fout<< row[j]<<",";
                     fout<<row[rsize-1]<<"\n";
                 
         }
@@ -891,7 +900,7 @@ void UserDatabase :: Delete(){
         }
         else if(c=='n'){
             int rsize = row.size();
-            for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+            for(int j=0;j<rsize-1;j++) fout<< row[j]<<",";
             fout<<row[rsize-1]<<"\n";
         }
     }
@@ -941,7 +950,7 @@ void BooksDatabase :: Delete(){
         }
         else if(c=='n'){
             int rsize = row.size();
-            for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
+            for(int j=0;j<rsize-1;j++) fout<< row[j]<<",";
             fout<<row[rsize-1]<<"\n";
         }
     }
@@ -1066,6 +1075,7 @@ int main(){
         }
         if(userRole) {
             cout << "\nLOGIN SUCCESSFUL\n";
+            fin.close();
             break;
         }
         else{
@@ -1080,7 +1090,7 @@ int main(){
        // char c='y';
         int choice=0;
         do{
-            cout << "\nMENU\nENTER YOUR CHOICE\n";
+            cout << "\n\nMENU\nENTER YOUR CHOICE\n";
             cout << "1: Add User\n";
             cout << "2: Update User details\n";
             cout << "3: Delete User\n";
@@ -1104,7 +1114,7 @@ int main(){
         P.setProf(row[1],row[0],stof(row[4]),stoi(row[5]));
         int choice=0;
         do{
-            cout << "\nMENU\nENTER YOUR CHOICE\n";
+            cout << "\n\nMENU\nENTER YOUR CHOICE\n";
             cout << "1: View list of ALL books\n";
             cout << "2: Request for a book\n";
             cout << "3: View details of a book\n";
@@ -1141,7 +1151,7 @@ int main(){
         string isbn;
         int choice=0;
         do{
-            cout << "\nMENU\nENTER YOUR CHOICE\n";
+            cout << "\n\nMENU\nENTER YOUR CHOICE\n";
             cout << "1: View list of ALL books\n";
             cout << "2: Request for a book\n";
             cout << "3: View details of a book\n";
