@@ -29,7 +29,7 @@ class Book{
     string Title,Author,Publication,ISBN, Id;
     int avail;
     vector<int> due_day;
-    void set_duedate();
+    void set_duedate(int role);
     public:
     void setBook(string t, string a,string p, string isbn, string i, int av, int d[3]){
         Title= t;
@@ -90,7 +90,7 @@ class Professor :  public User{
     }
 };
 
-class Librarian : private User{
+class Librarian : public User{
     public:
     void Act_on_user_database(UserDatabase U, int choice){ //1: add, 2: update, 3: delete, 4: view details of any user
         switch(choice){
@@ -115,7 +115,7 @@ class Librarian : private User{
     }
 };
 
-class Student :  private User{
+class Student :  public User{
     float FineAmnt;
     int book_count;
    // vector<Book> book_list;
@@ -139,6 +139,7 @@ class Student :  private User{
 
 //class functions definition
 int Book :: Book_request(string id_of_user){
+   // cout<<"in book req"<<avail;
     int role;
         if(avail == 0){
         cout << "Book not available.";
@@ -154,7 +155,7 @@ int Book :: Book_request(string id_of_user){
             fin.open("UserDatabase.csv");
             fout.open("UserTemp.csv");
             
-            getline(fin,line); //titles of attributes
+          //  getline(fin,line); //titles of attributes
             while(!fin.eof()){
                 int issued = 0;
                 row.clear();
@@ -175,7 +176,7 @@ int Book :: Book_request(string id_of_user){
                     else if(role==3){
                         Student S;
                         S.setStud(row[1],row[0],stof(row[4]),stoi(row[5]));
-                        if(S.book_count < 5){
+                        if(stoi(row[5]) < 5){
                             avail = 0; issued = 1;
                         }
                     }
@@ -183,16 +184,20 @@ int Book :: Book_request(string id_of_user){
                         Id = id_of_user;
                         set_duedate(role);
                         int rsize = row.size();
+                        if(!fin.eof()){
                         for(int j=0;j<rsize-1;j++){
                              fout<< row[j]<<", ";
                         }
                         fout<<to_string(stoi(row[rsize-1]) + 1)<<"\n";
+                        }
                     }
                 }
                 else if(issued==0){
                     int rsize = row.size();
+                    if(!fin.eof()){
                     for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
                     fout<<row[rsize-1]<<"\n";
+                    }
                 }
         }
          if(flag==0){
@@ -200,6 +205,7 @@ int Book :: Book_request(string id_of_user){
             }
         fin.close();
         fout.close();
+       // cout<<"ERROR IN DELETION";
         remove("UserDatabase.csv");
         rename("UserTemp.csv","UserDatabase.csv");
         flag = 0;
@@ -220,15 +226,19 @@ int Book :: Book_request(string id_of_user){
                 if(!ISBN.compare(row[0])){
                        // int rsize = row.size();
                        flag =1;
+                       if(!fin.eof()){
                         for(int j=0;j< 4;j++){
                              fout<< row[j]<<", ";
                         }
                         fout<<avail<<", "<<Id<<", "<<due_day[0]<<"-"<<due_day[1]<<"-"<<due_day[2]<<"\n";
+                       }
                 }
                 else {
                     int rsize = row.size();
+                    if(!fin.eof()){
                     for(int j=0;j<rsize-1;j++) fout<< row[j]<<", ";
                     fout<<row[rsize-1]<<"\n";
+                    }
                 }
         }
          if(flag==0){
@@ -257,7 +267,7 @@ int Book ::Book_return(string id_of_user){
             fin.open("UserDatabase.csv");
             fout.open("UserTemp.csv");
             
-            getline(fin,line); //titles of attributes
+           // getline(fin,line); //titles of attributes
             while(!fin.eof()){
                 //int issued = 0;
                 row.clear();
@@ -364,7 +374,7 @@ void Professor :: Calculate_fine(){
     Clear_fine_amount();
     fin.open("BooksDatabase.csv");
        
-    getline(fin,line); //titles of attributes
+  //  getline(fin,line); //titles of attributes
     while(!fin.eof()){
         row.clear();
         
@@ -459,7 +469,7 @@ void Student :: Calculate_fine(){
     Clear_fine_amount();
     fin.open("BooksDatabase.csv");
        
-    getline(fin,line); //titles of attributes
+   // getline(fin,line); //titles of attributes
     while(!fin.eof()){
         row.clear();
         
@@ -550,7 +560,7 @@ void UserDatabase :: Add(){
     do{
     cout <<"\nENTER DETAILS OF USER TO BE ADDED: ";
     cout << "\nEnter User Name : ";
-    gets(name);
+    getline(cin,name);
     cout << "\nEnter user id : ";
     cin >> id;
     while(password.compare(cpassword)){
@@ -579,11 +589,11 @@ void BooksDatabase :: Add(){
     do{
     cout <<"\nENTER DETAILS OF BOOK TO BE ADDED: ";
     cout << "\nEnter Title of the book : ";
-    gets(title);
+    getline(cin,title);
     cout << "\nEnter the author name : ";
-    gets(author);
+    getline(cin,author);
     cout << "\nEnter the publication : ";
-    gets(publication);
+    getline(cin,publication);
     cout <<"\nEnter the ISBN number : ";
     cin >> isbn;
 
@@ -604,7 +614,7 @@ void UserDatabase :: Search(){
     fin.open("UserDatabase.csv");
     cout<<"\nEnter the Id of the user : ";
     cin>> id;
-    getline(fin,line); //titles of attributes
+  //  getline(fin,line); //titles of attributes
     while(!fin.eof()){
         row.clear();
         
@@ -650,7 +660,7 @@ void BooksDatabase :: Search(int indicator){
         cout<<"\nEnter the ISBN of the book : ";
         cin>> isbn;
     }
-    getline(fin,line); //titles of attributes
+ //   getline(fin,line); //titles of attributes
     while(!fin.eof()){
         row.clear();
         
@@ -666,7 +676,8 @@ void BooksDatabase :: Search(int indicator){
             cout << "\nTitle : "<<row[1];
             cout << "\nAuthor : "<<row[2];
             cout << "\nPublication : "<<row[3];
-            cout<< "\nAvailability : "<<(stoi(row[4])==0)?"yes":"no";
+            string in = (stoi(row[4])==1)?"yes":"no";
+            cout<< "\nAvailability : "<<in;
             cout<< "\nIssued by id : "<<row[5];
             cout<< "\nDue date : "<<row[6];
         }
@@ -677,7 +688,8 @@ void BooksDatabase :: Search(int indicator){
             cout << "\nTitle : "<<row[1];
             cout << "\nAuthor : "<<row[2];
             cout << "\nPublication : "<<row[3];
-            cout<< "\nAvailability : "<<(stoi(row[4])==0)?"yes":"no";
+            string in = (stoi(row[4])==1)?"yes":"no";
+            cout<< "\nAvailability : "<<in;
             cout<< "\nIssued by id : "<<row[5];
             cout<< "\nDue date : "<<row[6];
             break;
@@ -705,7 +717,7 @@ void UserDatabase :: Update(){
             fin.open("UserDatabase.csv");
             fout.open("UserTemp.csv");
             
-            getline(fin,line); //titles of attributes
+          //  getline(fin,line); //titles of attributes
             while(!fin.eof()){
                 int issued = 0;
                 row.clear();
@@ -780,7 +792,7 @@ void BooksDatabase :: Update(){
             fin.open("BooksDatabase.csv");
             fout.open("BooksTemp.csv");
             
-            getline(fin,line); //titles of attributes
+          //  getline(fin,line); //titles of attributes
             while(!fin.eof()){
                 row.clear();
         
@@ -797,28 +809,29 @@ void BooksDatabase :: Update(){
                     cout << "\nTitle : "<<row[1];
                     cout << "\nAuthor : "<<row[2];
                     cout << "\nPublication : "<<row[3];
-                    cout<< "\nAvailability : "<<(stoi(row[4])==0)?"yes":"no";
+                    string in = (stoi(row[4])==1)?"yes":"no";
+                    cout<< "\nAvailability : "<<in;
                     cout<< "\nIssued by id : "<<row[5];
                     cout<< "\nDue date : "<<row[6];
+                    string det;
                      switch(col){
-                         string det;
                             case 1: cout <<"\nEnter new title: ";
-                                    gets(det); row[1] = det;
+                                    getline(cin,det); row[1] = det;
                                     break;
                             case 2: cout <<"\nEnter new author name: ";
-                                    gets(det); row[2] = det;
+                                    getline(cin,det); row[2] = det;
                                     break;
                             case 3: cout <<"\nEnter new publication: ";
-                                    gets(det); row[3] = det;
+                                    getline(cin,det); row[3] = det;
                                     break;
                             case 4: cout <<"\nEnter the availability: (0: unavailable   1: available)";
-                                    gets(det); row[4] = det;
+                                    getline(cin,det); row[4] = det;
                                     break;
                             case 5: cout <<"\nEnter new user: ";
-                                    gets(det); row[5] = det;
+                                    getline(cin,det); row[5] = det;
                                     break;
                             case 6: cout <<"\nEnter changed issue date: dd-mm-yyyy ";
-                                    gets(det); row[6] = det;
+                                    getline(cin,det); row[6] = det;
                                     break;
                             default: cout <<"\nEnter valid choice!!";
                         }
@@ -849,7 +862,7 @@ void UserDatabase :: Delete(){
     fout.open("UserTemp.csv");
     cout<<"\nEnter the Id of the user to be deleted: ";
     cin>> id;
-    getline(fin,line); //titles of attributes
+   // getline(fin,line); //titles of attributes
     while(!fin.eof()){
         row.clear();
         c ='n';
@@ -902,7 +915,7 @@ void BooksDatabase :: Delete(){
     fout.open("BooksTemp.csv");
     cout<<"\nEnter the ISBN of the Book to be deleted: ";
     cin>> isbn;
-    getline(fin,line); //titles of attributes
+  //  getline(fin,line); //titles of attributes
     while(!fin.eof()){
         row.clear();
         c ='n';
@@ -911,14 +924,15 @@ void BooksDatabase :: Delete(){
         while(getline(s,word,',')){
             row.push_back(word);
         }
-        if(!id.compare(row[0])){
+        if(!isbn.compare(row[0])){
             flag =1;
             cout<< "\nFOUND. Here are the DETAILS:  ";
             cout << "\nISBN : "<<row[0];
             cout << "\nTitle : "<<row[1];
             cout << "\nAuthor : "<<row[2];
             cout << "\nPublication : "<<row[3];
-            cout<< "\nAvailability : "<<(stoi(row[4])==0)?"yes":"no";
+            string in = (stoi(row[4])==1)?"yes":"no";
+            cout<< "\nAvailability : "<<in;
             cout<< "\nIssued by id : "<<row[5];
             cout<< "\nDue date : "<<row[6];
             cout<<"\nCONFIRM DELETE? (y/n)";
@@ -948,12 +962,12 @@ void BooksDatabase :: Display(){
     vector<string> row;
     
     fin.open("BooksDatabase.csv");
-    getline(fin,line); //titles of attributes
+  //  getline(fin,line); //titles of attributes
     cout << left <<setw(17)<<"ISBN"
         << left << setw(40) <<"TITLE"
         << left << setw(15) <<"AUTHOR"
         << left << setw(20) <<"PUBLICATION"
-        << left << setw(3) <<"AVAILABILITY";
+        << left << setw(3) <<"AVAILABILITY\n";
     while(!fin.eof()){
         row.clear();
         
@@ -962,11 +976,15 @@ void BooksDatabase :: Display(){
         while(getline(s,word,',')){
             row.push_back(word);
         }
+        if(!fin.eof()){
         cout << left <<setw(17)<<row[0]
         << left << setw(40) <<row[1]
         << left << setw(15) <<row[2]
-        << left << setw(20) <<row[3]
-        << left << setw(3) <<(stoi(row[4])==0)?"yes":"no";
+        << left << setw(20) <<row[3];
+        string i=(stoi(row[4])==1)?"yes":"no" ;
+        cout << left << setw(3) <<i;
+        cout <<endl;
+        }
     }
     fin.close();
 }
@@ -974,6 +992,7 @@ void BooksDatabase :: Display(){
 
 //general functions
 Book GiveObject(string isbn){
+    
     ifstream fin;
     string line, word;
     vector<string> row;
@@ -981,7 +1000,7 @@ Book GiveObject(string isbn){
     Book B;
     fin.open("BooksDatabase.csv");
     
-    getline(fin,line); //titles of attributes
+   // getline(fin,line); //titles of attributes
     while(!fin.eof()){
         row.clear();
         
@@ -994,11 +1013,14 @@ Book GiveObject(string isbn){
         if(isbn.compare(row[0])==0){
             flag =1;
 
-            int d[3],j=0;
+            int d[3]={0,0,0},j=0;
             string dig;
+            //cout<<row[6]<<endl;
+            if(row[6].compare("NULL")){
             stringstream s1(row[6]);
             while(getline(s1,dig,'-')){
                 d[j++]= stoi(dig);
+            }
             }
             B.setBook(row[1],row[2],row[3],row[0],row[5],stoi(row[4]),d);
             return B;
@@ -1006,6 +1028,7 @@ Book GiveObject(string isbn){
     }
     if(flag==0) cout<<"\nBook NOT found by the given details\n";
     fin.close();
+    return B;
 }
 
 int main(){
@@ -1013,7 +1036,7 @@ int main(){
     BooksDatabase B;
     int attempt = 5;
     ifstream fin;
-    
+    Book b;
     vector<string> row;
     
     int userRole =0;
@@ -1025,7 +1048,7 @@ int main(){
         cin >> input_id;
         cout<< "\nEnter Password :";
         cin >> input_passwd;
-        getline(fin, line); //titles of attributes
+      //  getline(fin, line); //titles of attributes
         while(!fin.eof()){
             row.clear();
             
@@ -1071,8 +1094,8 @@ int main(){
             cout << "0: Exit\n";
             cin >> choice;
             if(choice && choice <= 4) L.Act_on_user_database(U,choice);
-            else if(choice <= 10) L.Act_on_book_database(B,choice);
-            else cout <<"\nEnter Valid Choice!\n";
+            else if(choice && choice <= 10) L.Act_on_book_database(B,choice);
+            else if(choice) cout <<"\nEnter Valid Choice!\n";
         }while(choice!= 0);
     }
     else if(userRole==2){
@@ -1091,17 +1114,18 @@ int main(){
             cin >> choice;
             switch (choice)
             {
+                case 0: break;
             case 1: B.Display();
                     break;
             case 2: cout << "\nEnter isbn of the book you want to request: ";
                     cin >> isbn;
-                    Book b = GiveObject(isbn);
+                    b = GiveObject(isbn);
                     b.Book_request(P.Id);
                     break;
             case 3: B.Search(2); break;
             case 4: cout << "\nEnter isbn of the book you want to return: ";
                     cin >> isbn;
-                    Book b = GiveObject(isbn);
+                    b = GiveObject(isbn);
                     b.Book_return(P.Id);
                     break;
             case 5: P.showFine();
@@ -1127,17 +1151,18 @@ int main(){
             cin >> choice;
             switch (choice)
             {
+                case 0: break;
             case 1: B.Display();
                     break;
             case 2: cout << "\nEnter isbn of the book you want to request: ";
                     cin >> isbn;
-                    Book b = GiveObject(isbn);
+                    b = GiveObject(isbn);
                     b.Book_request(S.Id);
                     break;
             case 3: B.Search(2); break;
             case 4: cout << "\nEnter isbn of the book you want to return: ";
                     cin >> isbn;
-                    Book b = GiveObject(isbn);
+                    b = GiveObject(isbn);
                     b.Book_return(S.Id);
                     break;
             case 5: S.showFine();
