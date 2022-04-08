@@ -658,7 +658,7 @@ void BooksDatabase :: Search(int indicator){
     ifstream fin;
     string line, word, id, isbn;
     vector<string> row;
-    int flag =0;
+    int flag =0, count = 0;
     
     fin.open("BooksDatabase.csv");
     if(indicator==1){
@@ -679,8 +679,9 @@ void BooksDatabase :: Search(int indicator){
             row.push_back(word);
         }
         if(indicator==1 && id.compare(row[5])==0){
-            flag =1;
-            cout<< "\nFOUND. Here are the DETAILS:  ";
+            flag =1; count++;
+            cout<<count<<":";
+           // cout<< "\nFOUND. Here are the DETAILS:  ";
             cout << "\nISBN : "<<row[0];
             cout << "\nTitle : "<<row[1];
             cout << "\nAuthor : "<<row[2];
@@ -688,7 +689,7 @@ void BooksDatabase :: Search(int indicator){
             string in = (stoi(row[4])==1)?"yes":"no";
             cout<< "\nAvailability : "<<in;
             cout<< "\nIssued by id : "<<row[5];
-            cout<< "\nDue date : "<<row[6];
+            cout<< "\nDue date : "<<row[6]<<endl;
         }
         if(indicator==2 && isbn.compare(row[0])==0){
             flag =1;
